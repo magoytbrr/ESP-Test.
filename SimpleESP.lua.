@@ -1,1 +1,99 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/magoytbrr/ESP-Test/main/SimpleESP.lua"))()
+-- Simple ESP com botão móvel, Team Check e persistência após morte
+
+local ESPEnabled = false
+
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Criação do GUI
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "SimpleESP_GUI"
+ScreenGui.ResetOnSpawn = false
+
+-- Botão roxo com texto "ESP TEST" acima
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 130, 0, 60)
+MainFrame.Position = UDim2.new(0, 100, 0, 200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(80, 0, 160)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local Label = Instance.new("TextLabel", MainFrame)
+Label.Size = UDim2.new(1, 0, 0.4, 0)
+Label.Text = "ESP TEST"
+Label.TextColor3 = Color3.new(1,1,1)
+Label.BackgroundTransparency = 1
+Label.Font = Enum.Font.SourceSansBold
+Label.TextSize = 16
+
+local Button = Instance.new("TextButton", MainFrame)
+Button.Position = UDim2.new(0, 0, 0.4, 0)
+Button.Size = UDim2.new(1, 0, 0.6, 0)
+Button.Text = "Ativar ESP"
+Button.BackgroundColor3 = Color3.fromRGB(120, 0, 200)
+Button.TextColor3 = Color3.new(1,1,1)
+Button.Font = Enum.Font.SourceSansBold
+Button.TextSize = 18
+
+-- Função para adicionar ESP
+local function createESP(player)
+	if player == LocalPlayer or not player.Character then return end
+
+	local Box = Instance.new("BoxHandleAdornment")
+	Box.Name = "ESPBox"
+	Box.Adornee = player.Character:FindFirstChild("HumanoidRootPart")
+	if not Box.Adornee then return end
+	Box.Size = Vector3.new(3,6,1)
+	Box.Color3 = Color3.new(1,0,0)
+	Box.Transparency = 0.7
+	Box.ZIndex = 5
+	Box.AlwaysOnTop = true
+	Box.Parent = player.Character
+end
+
+-- Remover ESP
+local function removeESP()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Character and player.Character:FindFirstChild("ESPBox") then
+			player.Character.ESPBox:Destroy()
+		end
+	end
+end
+
+-- Atualizador de ESP
+local function updateESP()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Team ~= LocalPlayer.Team then
+			local root = player.Character:FindFirstChild("HumanoidRootPart")
+			if root and not player.Character:FindFirstChild("ESPBox") then
+				createESP(player)
+			end
+		end
+	end
+end
+
+-- Botão de ativar/desativar
+Button.MouseButton1Click:Connect(function()
+	ESPEnabled = not ESPEnabled
+	Button.Text = ESPEnabled and "Desativar ESP" or "Ativar ESP"
+	if not ESPEnabled then
+		removeESP()
+	end
+end)
+
+-- Loop para manter o ESP ativo
+RunService.RenderStepped:Connect(function()
+	if ESPEnabled then
+		updateESP()
+	end
+end)
+
+-- Persistência após morte
+LocalPlayer.CharacterAdded:Connect(function()
+	wait(1)
+	if ESPEnabled then
+		updateESP()
+	end
+end)
